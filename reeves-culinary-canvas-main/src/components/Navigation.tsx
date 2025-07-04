@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Link, useNavigate } from "react-router-dom";
+import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { Cloudinary } from '@cloudinary/url-gen';
+import { auto } from '@cloudinary/url-gen/actions/resize';
+import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
+import { AdvancedImage } from '@cloudinary/react';
 
 const Navigation = ({ cart, showOrderPanel, setShowOrderPanel, setCart }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,8 +37,15 @@ const Navigation = ({ cart, showOrderPanel, setShowOrderPanel, setCart }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const navItems = [
-    { name: 'Home', href: '#home' },
+    { name: 'Home', href: '/' },
     { name: 'Our Story', href: '#story' },
     { name: 'Menu', href: '#menu' },
     { name: 'Gallery', href: '#gallery' },
@@ -38,6 +54,21 @@ const Navigation = ({ cart, showOrderPanel, setShowOrderPanel, setCart }) => {
 
   // Only show the Your Order section if cart has items
   const hasCartItems = cart.length > 0;
+
+  const handleLogout = async () => {
+    await firebaseSignOut(auth);
+    setCurrentUser(null);
+    navigate("/");
+  };
+
+  const cld = new Cloudinary({ cloud: { cloudName: 'dkgrgqt3g' } });
+  const img = cld
+        .image('cld-sample-5')
+        .format('auto')
+        .quality('auto')
+        .resize(auto().gravity(autoGravity()).width(500).height(500));
+
+  const optimizedImage = cld.image('sample');
 
   return (
     <>
@@ -55,35 +86,18 @@ const Navigation = ({ cart, showOrderPanel, setShowOrderPanel, setCart }) => {
       
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
         scrolled 
-          ? 'bg-background/95 backdrop-blur-3xl border-b border-primary/20 shadow-2xl' 
-          : 'bg-background/90 backdrop-blur-2xl border-b border-border/40'
+          ? 'bg-gradient-to-r from-[#1a1a1a] via-[#333333] to-[#1a1a1a] backdrop-blur-xl border-b border-[#444444] shadow-md' 
+          : 'bg-gradient-to-r from-[#000000] via-[#1a1a1a] to-[#000000] backdrop-blur-lg border-b border-[#222222]'
       }`}>
         <div className="container mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 lg:h-24">
-            {/* Enhanced Logo with premium branding */}
-            <div className="flex-shrink-0 group cursor-pointer relative overflow-hidden py-1 sm:py-2">
-              <div className="absolute inset-0 bg-gradient-warm opacity-0 group-hover:opacity-15 rounded-2xl transition-all duration-700 transform scale-0 group-hover:scale-110 blur-xl" />
-              
-              {/* Main Reeves text with premium styling */}
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair font-bold relative z-10 transition-all duration-700 group-hover:scale-105">
-                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] bg-[position:0%_50%] group-hover:bg-[position:100%_50%] transition-all duration-1000">
-                  Reeves
-                </span>
-              </h1>
-              
-              {/* Subtitle with elegant animation */}
-              <p className="text-xs sm:text-sm lg:text-base text-muted-foreground -mt-1 transition-all duration-700 group-hover:text-primary/90 group-hover:translate-x-2 relative z-10 font-medium tracking-wider">
-                Kakinada
-              </p>
-              
-              {/* Dynamic underline with gradient */}
-              <div className="absolute -bottom-2 left-0 w-0 h-1 bg-gradient-warm rounded-full transition-all duration-1000 group-hover:w-full shadow-lg" />
-              
-              {/* Glow effect */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-warm opacity-0 group-hover:opacity-20 scale-150 transition-all duration-700 blur-2xl" />
+            {/* Enhanced Logo with Animated Gradient Text and Subtext */}
+            <div className="flex-shrink-0 group cursor-pointer relative overflow-hidden py-2 sm:py-3">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-playfair font-bold bg-gradient-to-r from-[#ff7e5f] via-[#feb47b] to-[#ff7e5f] bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] bg-[position:0%_50%] group-hover:bg-[position:100%_50%] transition-all duration-1000">Reeves</span>
+              <p className="text-sm sm:text-base lg:text-lg text-[#feb47b] -mt-1 transition-all duration-700 group-hover:text-[#ff7e5f] group-hover:translate-x-2 relative z-10 font-medium tracking-wider">Kakinada</p>
             </div>
 
-            {/* Enhanced Desktop Navigation */}
+            {/* Simplified Desktop Navigation */}
             <div className="hidden lg:flex items-center">
               <div className="ml-4 sm:ml-10 flex items-baseline space-x-1">
                 {navItems.map((item, index) => (
@@ -95,15 +109,12 @@ const Navigation = ({ cart, showOrderPanel, setShowOrderPanel, setCart }) => {
                   >
                     {/* Enhanced background glow */}
                     <span className="absolute inset-0 bg-gradient-warm opacity-0 rounded-2xl scale-75 transition-all duration-500 group-hover:scale-100 group-hover:opacity-10" />
-                    
                     {/* Text with magnetic effect */}
                     <span className="relative z-10 transition-all duration-500 group-hover:scale-110 group-hover:font-semibold group-hover:tracking-wide">
                       {item.name}
                     </span>
-                    
                     {/* Enhanced underline */}
                     <span className="absolute bottom-2 left-6 w-0 h-0.5 bg-gradient-warm transition-all duration-700 group-hover:w-[calc(100%-3rem)] shadow-lg" />
-                    
                     {/* Particle effects */}
                     <span className="absolute top-1/2 left-1/2 w-1 h-1 bg-accent rounded-full opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:scale-[8] group-hover:bg-accent/30 -translate-x-1/2 -translate-y-1/2" />
                   </a>
@@ -119,21 +130,23 @@ const Navigation = ({ cart, showOrderPanel, setShowOrderPanel, setCart }) => {
                     <span className="ml-2 bg-primary text-white rounded-full px-2 py-0.5 text-xs font-bold">{cart.reduce((sum, i) => sum + i.qty, 0)}</span>
                   )}
                 </button>
+                {/* Auth Button */}
+                {currentUser ? (
+                  <button
+                    onClick={handleLogout}
+                    className="ml-4 px-6 py-4 text-base font-medium rounded-2xl bg-red-500 text-white hover:bg-red-600 transition-all duration-300"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <Link
+                    to="/auth"
+                    className="ml-4 px-6 py-4 text-base font-medium rounded-2xl bg-primary text-white hover:bg-primary/90 transition-all duration-300"
+                  >
+                    Login
+                  </Link>
+                )}
               </div>
-            </div>
-
-            {/* Premium CTA Button */}
-            <div className="hidden lg:block">
-              <Button className="bg-gradient-warm text-white hover:opacity-95 hover:scale-110 transition-all duration-700 shadow-2xl hover:shadow-primary/25 relative overflow-hidden group px-10 py-4 rounded-full text-lg font-bold">
-                <span className="relative z-10">Reserve Now</span>
-                
-                {/* Enhanced shimmer */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1500" />
-                
-                {/* Multiple glow layers */}
-                <div className="absolute inset-0 rounded-full bg-gradient-warm opacity-0 group-hover:opacity-60 scale-150 transition-all duration-700" />
-                <div className="absolute inset-0 rounded-full bg-accent opacity-0 group-hover:opacity-20 scale-200 transition-all duration-1000" />
-              </Button>
             </div>
 
             {/* Enhanced Mobile menu button */}
@@ -197,9 +210,16 @@ const Navigation = ({ cart, showOrderPanel, setShowOrderPanel, setCart }) => {
                     <span className="ml-2 bg-primary text-white rounded-full px-2 py-0.5 text-xs font-bold">{cart.reduce((sum, i) => sum + i.qty, 0)}</span>
                   )}
                 </button>
-                <Button className="w-full mt-4 bg-gradient-warm text-white hover:opacity-90 transition-all duration-700 hover:scale-105 py-5 rounded-2xl shadow-xl text-lg font-bold">
-                  Reserve Now
-                </Button>
+                {/* Auth Button for Mobile Nav */}
+                {!currentUser && (
+                  <Link
+                    to="/auth"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full mt-4 px-6 py-4 text-base font-medium rounded-2xl bg-primary text-white hover:bg-primary/90 transition-all duration-300 block text-center"
+                  >
+                    Login
+                  </Link>
+                )}
               </div>
             </div>
           )}
